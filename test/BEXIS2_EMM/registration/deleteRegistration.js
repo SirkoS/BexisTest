@@ -1,8 +1,3 @@
-// After Delete Registrations tests are done, register.event.test.name event
-// has to be removed manually from the database and also from Manage Events
-// otherwise it will overcrowd the events table with the same event name
-// which will lead to failing of the Delete Registrations tests.
-
 import Browser from '../../../util/Browser';
 import util from '../../../util/common';
 import { assert } from 'chai';
@@ -25,6 +20,19 @@ describe('Delete Registration', () => {
 
     // registers an event
     await assert.isFulfilled(EMMElements.registerEvent(page, util, assert), 'should register an event');
+  });
+
+  after(async () => {
+
+    const page = await Browser.openTab();
+
+    // make sure we are logged in
+    if( !(await util.login.isLoggedIn(page)) ) {
+      await assert.isFulfilled( util.login.loginUser(page), 'should log in' );
+    }
+
+    // removes an event
+    await assert.isFulfilled(EMMElements.removeEvent(page, util, elements, assert, 'register.event.test.name'), 'should remove a registered event');
   });
 
   deleteRegistrationTest('cancel');

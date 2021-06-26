@@ -7,6 +7,7 @@ export default {
   createEvent,
   deleteEvent,
   registerEvent,
+  removeEvent,
   filterEventByName
 };
 
@@ -320,6 +321,48 @@ async function registerEvent(page, util, assert) {
   // after registration there should be two icons, edit and delete icons, instead of Register button
   const deleteIconClass = await page.evaluate(() => document.querySelector('#Events > table > tbody > tr:nth-child(1) > td:nth-child(2)').previousSibling.lastElementChild.className.trim());
   assert.equal(deleteIconClass, 'bx bx-grid-function bx-trash', 'the second element child should have bx bx-grid-function bx-trash class name for delete icon');
+}
+
+/**
+ * Remove event -- it also removes registered events
+ *
+ * @param   {object}    page
+ * @param   {object}    util
+ * @param   {object}    elements
+ * @param   {object}    assert
+ * @param   {string}    eventName
+ */
+
+async function removeEvent(page, util, elements, assert, eventName){
+
+  // navigate to "Show Reservations"
+  await util.menu.select(page, 'Show Reservations');
+
+  // wait for the first event in Event contents
+  await page.waitForSelector('#Content_Events > div > ul > li > ul > li > div > a.t-link.t-in.event');
+
+  // click registration event on its name to show it on the Event Registration Results table and wait for navigation
+  await elements.clickAnyElementByText(page, eventName);
+  await page.waitForNavigation();
+
+  // wait for the first event in Event contents
+  await page.waitForSelector('#Content_Events > div > ul > li > ul > li > div > a.t-link.t-in.event');
+
+  // wait for Delete button
+  await page.waitForSelector('body > div.main-content.container-fluid > table > tbody > tr > td:nth-child(3) > div > span');
+
+  // after clicking delete button, alert box is shown -> click Ok
+  page.on('dialog', async dialog => { await dialog.accept(); });
+
+  // click Delete button
+  await Promise.all([
+    page.waitForNavigation(),
+    page.click('body > div.main-content.container-fluid > table > tbody > tr > td:nth-child(3) > div > span'),
+  ]);
+
+  // get the list of events from tree view under open to check if the registered event is removed or not
+  const treeViewContent = await elements.returnContent(page, '#TreeView > ul > li.t-item.t-first > ul > li > div > a');
+  assert.isFalse(treeViewContent.includes(eventName), 'should not contain the registered event in the tree view of events');
 }
 
 /**
